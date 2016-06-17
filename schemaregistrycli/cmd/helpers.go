@@ -23,7 +23,8 @@ func getLatestBySubject(subj string) {
 		log.Fatal(err)
 	}
 	log.Printf("version: %d\n", sch.Version)
-	fmt.Println(sch.Schema)
+	log.Printf("id: %d\n", sch.Id)
+	fmt.Println(sch.Schema.Schema)
 }
 
 func getBySubjectVersion(subj string, ver int) {
@@ -33,7 +34,8 @@ func getBySubjectVersion(subj string, ver int) {
 		log.Fatal(err)
 	}
 	log.Printf("version: %d\n", sch.Version)
-	fmt.Println(sch.Schema)
+	log.Printf("id: %d\n", sch.Id)
+	fmt.Println(sch.Schema.Schema)
 }
 
 func assertClient(endpoint string) *schemaregistry.Client {
