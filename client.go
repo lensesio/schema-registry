@@ -27,11 +27,6 @@ type SubjectSchema struct {
 	Id      int    `json:"id"`
 }
 
-type NameSchema struct {
-	VersionedSchema
-	Name string `json:"name"`
-}
-
 type VersionedSchema struct {
 	Schema
 	Version int `json:"version"`
@@ -129,14 +124,14 @@ func (c *Client) GetSchemaById(id int) (Schema, error) {
 	return s, err
 }
 
-func (c *Client) GetSchemaBySubjectVersion(sub string, ver int) (NameSchema, error) {
-	var s NameSchema
+func (c *Client) GetSchemaBySubjectVersion(sub string, ver int) (SubjectSchema, error) {
+	var s SubjectSchema
 	err := c.do("GET", fmt.Sprintf("/subjects/%s/versions/%d", sub, ver), nil, &s)
 	return s, err
 }
 
-func (c *Client) GetLatestSchema(sub string) (NameSchema, error) {
-	var s NameSchema
+func (c *Client) GetLatestSchema(sub string) (SubjectSchema, error) {
+	var s SubjectSchema
 	err := c.do("GET", fmt.Sprintf("/subjects/%s/versions/latest", sub), nil, &s)
 	return s, err
 }
