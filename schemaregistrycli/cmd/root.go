@@ -29,10 +29,8 @@ var registryUrl string = schemaregistry.DefaultUrl
 // RootCmd represents the base command when called without any subcommands
 var RootCmd = &cobra.Command{
 	Use:   "schemaregistrycli",
-	Short: "A brief description of your application",
-	Long: `A longer description that spans multiple lines and likely contains
-examples and usage of using your application. For example:
-`,
+	Short: "A command line interface for the Confluent schema registry",
+	Long:  `A command line interface for the Confluent schema registry`,
 }
 
 // Execute adds all child commands to the root command sets flags appropriately.

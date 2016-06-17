@@ -8,8 +8,8 @@ import (
 )
 
 var existsCmd = &cobra.Command{
-	Use:   "exists",
-	Short: "",
+	Use:   "exists <subject>",
+	Short: "checks if the schema provided through stdin exists for the subject",
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) != 1 {

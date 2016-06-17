@@ -9,9 +9,12 @@ import (
 
 // get can handle three argument styles: <id>, <subj ver> or <subj>
 var getCmd = &cobra.Command{
-	Use:   "get",
-	Short: "",
-	Long:  ``,
+	Use:   "get <id> | (<subject> [<version>])",
+	Short: "retrieves a schema specified by id or subject",
+	Long: `The schema can be requested by id or subject.
+When a subject is given, optionally one can provide a specific version. If no
+version is specified, the latest version is returned.
+`,
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) < 1 || len(args) > 2 {
 			log.Fatalf("expected 1 to 2 arguments")

@@ -7,8 +7,8 @@ import (
 )
 
 var addCmd = &cobra.Command{
-	Use:   "add",
-	Short: "",
+	Use:   "add <subject>",
+	Short: "registers the schema provided through stdin",
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) != 1 {

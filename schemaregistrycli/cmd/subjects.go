@@ -9,7 +9,7 @@ import (
 
 var subjectsCmd = &cobra.Command{
 	Use:   "subjects",
-	Short: "",
+	Short: "lists all registered subjects",
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
 		subs, err := assertClient(registryUrl).Subjects()

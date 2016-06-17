@@ -9,7 +9,7 @@ import (
 
 var versionsCmd = &cobra.Command{
 	Use:   "versions",
-	Short: "",
+	Short: "lists all available versions",
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) != 1 {
