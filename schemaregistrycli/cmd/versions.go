@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"log"
 
 	"github.com/spf13/cobra"
 )
@@ -11,16 +10,17 @@ var versionsCmd = &cobra.Command{
 	Use:   "versions",
 	Short: "lists all available versions",
 	Long:  ``,
-	Run: func(cmd *cobra.Command, args []string) {
+	RunE: func(cmd *cobra.Command, args []string) error {
 		if len(args) != 1 {
-			log.Fatalf("expected 1 argument")
+			return fmt.Errorf("expected 1 argument")
 		}
 		client := assertClient(registryUrl)
 		vers, err := client.Versions(args[0])
 		if err != nil {
-			log.Fatal(err)
+			return err
 		}
 		fmt.Printf("%v\n", vers)
+		return nil
 	},
 }
 
