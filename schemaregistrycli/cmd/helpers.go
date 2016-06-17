@@ -1,11 +1,22 @@
 package cmd
 
 import (
+	"bufio"
 	"fmt"
+	"io/ioutil"
 	"log"
+	"os"
 
 	"github.com/rollulus/schemaregistry"
 )
+
+func stdinToString() string {
+	bs, err := ioutil.ReadAll(bufio.NewReader(os.Stdin))
+	if err != nil {
+		log.Fatal(err)
+	}
+	return string(bs)
+}
 
 func getById(id int) {
 	cl := assertClient(registryUrl)
