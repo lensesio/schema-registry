@@ -4,59 +4,61 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"net/url"
 	"path"
 )
 
+// DefaultUrl is the address where a local schema registry listens by default.
 var DefaultUrl = "http://localhost:8081"
 
+// These numbers are used by the schema registry to communicate errors.
 const (
-	SubjectNotFound = 40401
-	SchemaNotFound  = 40403
+	subjectNotFound = 40401
+	schemaNotFound  = 40403
 )
 
+// The Schema type is an object produced by the schema registry.
 type Schema struct {
+	Schema  string `json:"schema"`  // The actual AVRO schema
+	Subject string `json:"subject"` // Subject where the schema is registered for
+	Version int    `json:"version"` // Version within this subject
+	Id      int    `json:"id"`      // Registry's unique id
+}
+
+type simpleSchema struct {
 	Schema string `json:"schema"`
 }
 
-type SubjectSchema struct {
-	VersionedSchema
-	Subject string `json:"subject"`
-	Id      int    `json:"id"`
-}
-
-type VersionedSchema struct {
-	Schema
-	Version int `json:"version"`
-}
-
-type ConfluentError struct {
+// A ConfluentError is an error as communicated by the schema registry.
+// Some day this type might be exposed so that callers can do type assertions on it.
+type confluentError struct {
 	ErrorCode int    `json:"error_code"`
 	Message   string `json:"message"`
 }
 
-func (ce ConfluentError) Error() string {
+// Error makes confluentError implement the error interface.
+func (ce confluentError) Error() string {
 	return fmt.Sprintf("%s (%d)", ce.Message, ce.ErrorCode)
 }
 
+// A Client is a client for the schema registry.
 type Client struct {
 	url url.URL
 }
 
-func confluentErrorToError(resp *http.Response) error {
-	var ce ConfluentError
+func parseSchemaRegistryError(resp *http.Response) error {
+	var ce confluentError
 	if err := json.NewDecoder(resp.Body).Decode(&ce); err != nil {
 		return err
 	}
 	return ce
 }
 
-func (c *Client) do(m, p string, in interface{}, out interface{}) error {
+// do performs http requests and json (de)serialization.
+func (c *Client) do(method, urlPath string, in interface{}, out interface{}) error {
 	u := c.url
-	u.Path = path.Join(u.Path, p)
-	log.Printf("%s %s\n", m, u.String())
+	u.Path = path.Join(u.Path, urlPath)
 	var rdp io.Reader
 	if in != nil {
 		var wr *io.PipeWriter
@@ -65,7 +67,7 @@ func (c *Client) do(m, p string, in interface{}, out interface{}) error {
 			wr.CloseWithError(json.NewEncoder(wr).Encode(in))
 		}()
 	}
-	req, err := http.NewRequest(m, u.String(), rdp)
+	req, err := http.NewRequest(method, u.String(), rdp)
 	req.Header.Add("Accept", "application/vnd.schemaregistry.v1+json, application/vnd.schemaregistry+json, application/json")
 	if err != nil {
 		return err
@@ -74,40 +76,40 @@ func (c *Client) do(m, p string, in interface{}, out interface{}) error {
 	if err != nil {
 		return err
 	}
-
 	defer resp.Body.Close()
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return confluentErrorToError(resp)
+		return parseSchemaRegistryError(resp)
 	}
 	return json.NewDecoder(resp.Body).Decode(out)
 }
 
-func (c *Client) Subjects() ([]string, error) {
-	var ss []string
-	err := c.do("GET", "subjects", nil, &ss)
-	return ss, err
+// Subjects returns all registered subjects.
+func (c *Client) Subjects() (subjects []string, err error) {
+	err = c.do("GET", "subjects", nil, &subjects)
+	return
 }
 
-func (c *Client) Versions(sub string) ([]int, error) {
-	var vs []int
-	err := c.do("GET", fmt.Sprintf("subjects/%s/versions", sub), nil, &vs)
-	return vs, err
+// Versions returns all schema version numbers registered for this subject.
+func (c *Client) Versions(subject string) (versions []int, err error) {
+	err = c.do("GET", fmt.Sprintf("subjects/%s/versions", subject), nil, &versions)
+	return
 }
 
-func (c *Client) RegisterNewSchema(sub, schema string) (int, error) {
+// RegisterNewSchema registers the given schema for this subject.
+func (c *Client) RegisterNewSchema(subject, schema string) (int, error) {
 	var resp struct {
 		Id int `json:"id"`
 	}
-	//	s := Schema{schema}
-	err := c.do("POST", fmt.Sprintf("/subjects/%s/versions", sub), Schema{schema}, &resp)
+	err := c.do("POST", fmt.Sprintf("/subjects/%s/versions", subject), simpleSchema{schema}, &resp)
 	return resp.Id, err
 }
 
-func (c *Client) IsRegistered(sub, schema string) (bool, SubjectSchema, error) {
-	var fs SubjectSchema
-	err := c.do("POST", fmt.Sprintf("/subjects/%s", sub), Schema{schema}, &fs)
+// IsRegistered tells if the given schema is registred for this subject.
+func (c *Client) IsRegistered(subject, schema string) (bool, Schema, error) {
+	var fs Schema
+	err := c.do("POST", fmt.Sprintf("/subjects/%s", subject), simpleSchema{schema}, &fs)
 	// schema not found?
-	if ce, confluentErr := err.(ConfluentError); confluentErr && ce.ErrorCode == SchemaNotFound {
+	if ce, confluentErr := err.(confluentError); confluentErr && ce.ErrorCode == schemaNotFound {
 		return false, fs, nil
 	}
 	// error?
@@ -118,24 +120,27 @@ func (c *Client) IsRegistered(sub, schema string) (bool, SubjectSchema, error) {
 	return true, fs, nil
 }
 
-func (c *Client) GetSchemaById(id int) (Schema, error) {
+// GetSchemaById returns the schema for some id.
+// The schema registry only provides the schema itself, not the id, subject or version.
+func (c *Client) GetSchemaById(id int) (string, error) {
 	var s Schema
 	err := c.do("GET", fmt.Sprintf("/schemas/ids/%d", id), nil, &s)
-	return s, err
+	return s.Schema, err
 }
 
-func (c *Client) GetSchemaBySubjectVersion(sub string, ver int) (SubjectSchema, error) {
-	var s SubjectSchema
-	err := c.do("GET", fmt.Sprintf("/subjects/%s/versions/%d", sub, ver), nil, &s)
-	return s, err
+// GetSchemaBySubject returns the schema for a particular subject and version.
+func (c *Client) GetSchemaBySubject(subject string, ver int) (s Schema, err error) {
+	err = c.do("GET", fmt.Sprintf("/subjects/%s/versions/%d", subject, ver), nil, &s)
+	return
 }
 
-func (c *Client) GetLatestSchema(sub string) (SubjectSchema, error) {
-	var s SubjectSchema
-	err := c.do("GET", fmt.Sprintf("/subjects/%s/versions/latest", sub), nil, &s)
-	return s, err
+// GetLatestSchema returns the latest version of the subject's schema.
+func (c *Client) GetLatestSchema(subject string) (s Schema, err error) {
+	err = c.do("GET", fmt.Sprintf("/subjects/%s/versions/latest", subject), nil, &s)
+	return
 }
 
+// NewClient returns a new Client that connects to baseurl.
 func NewClient(baseurl string) (*Client, error) {
 	u, err := url.Parse(baseurl)
 	if err != nil {

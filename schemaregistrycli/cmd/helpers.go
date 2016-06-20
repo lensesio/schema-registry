@@ -24,7 +24,7 @@ func getById(id int) error {
 	if err != nil {
 		return err
 	}
-	fmt.Println(sch.Schema)
+	fmt.Println(sch)
 	return nil
 }
 
@@ -36,7 +36,7 @@ func getLatestBySubject(subj string) error {
 	}
 	log.Printf("version: %d\n", sch.Version)
 	log.Printf("id: %d\n", sch.Id)
-	fmt.Println(sch.Schema.Schema)
+	fmt.Println(sch.Schema)
 	return nil
 }
 
@@ -48,7 +48,7 @@ func getBySubjectVersion(subj string, ver int) error {
 	}
 	log.Printf("version: %d\n", sch.Version)
 	log.Printf("id: %d\n", sch.Id)
-	fmt.Println(sch.Schema.Schema)
+	fmt.Println(sch.Schema)
 	return nil
 }
 
