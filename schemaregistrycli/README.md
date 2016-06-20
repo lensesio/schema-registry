@@ -19,9 +19,9 @@ Available Commands:
   versions    lists all available versions
 
 Flags:
-      --config string   config file (default is $HOME/.schemaregistrycli.yaml)
-  -h, --help            help for schemaregistrycli
-  -e, --url string      schema registry url (default "http://localhost:8081")
+  -h, --help         help for schemaregistrycli
+  -e, --url string   schema registry url (default "http://localhost:8081")
+  -v, --verbose      be verbose
 
 Use "schemaregistrycli [command] --help" for more information about a command.
 ```
