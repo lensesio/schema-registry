@@ -7,7 +7,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/rollulus/schemaregistry"
+	"github.com/datamountaineer/schema-registry"
 )
 
 func stdinToString() string {
@@ -42,7 +42,7 @@ func getLatestBySubject(subj string) error {
 
 func getBySubjectVersion(subj string, ver int) error {
 	cl := assertClient(registryUrl)
-	sch, err := cl.GetSchemaBySubjectVersion(subj, ver)
+	sch, err := cl.GetSchemaBySubject(subj, ver)
 	if err != nil {
 		return err
 	}

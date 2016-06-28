@@ -6,7 +6,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/rollulus/schemaregistry"
+	"github.com/datamountaineer/schema-registry"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -17,7 +17,7 @@ var verbose bool = false
 
 // RootCmd represents the base command when called without any subcommands
 var RootCmd = &cobra.Command{
-	Use:   "schemaregistrycli",
+	Use:   "schema-registry-cli",
 	Short: "A command line interface for the Confluent schema registry",
 	Long:  `A command line interface for the Confluent schema registry`,
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
