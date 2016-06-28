@@ -43,9 +43,14 @@ func (ce confluentError) Error() string {
 	return fmt.Sprintf("%s (%d)", ce.Message, ce.ErrorCode)
 }
 
+type httpDoer interface {
+	Do(req *http.Request) (resp *http.Response, err error)
+}
+
 // A Client is a client for the schema registry.
 type Client struct {
-	url url.URL
+	url    url.URL
+	client httpDoer
 }
 
 func parseSchemaRegistryError(resp *http.Response) error {
@@ -73,7 +78,7 @@ func (c *Client) do(method, urlPath string, in interface{}, out interface{}) err
 	if err != nil {
 		return err
 	}
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := c.client.Do(req)
 	if err != nil {
 		return err
 	}
@@ -147,5 +152,5 @@ func NewClient(baseurl string) (*Client, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &Client{*u}, nil
+	return &Client{*u, http.DefaultClient}, nil
 }
