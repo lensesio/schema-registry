@@ -3,6 +3,8 @@ Confluent Kafka Schema Registry API and CLI
 
 This repository contains an API and CLI for the Confluent Kafka Schema Registry in Go.
 
+[![GoDoc](https://godoc.org/github.com/datamountaineer/schema-registry?status.svg)](https://godoc.org/github.com/datamountaineer/schema-registry)
+
 CLI
 ---
 
