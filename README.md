@@ -3,6 +3,7 @@ Confluent Kafka Schema Registry CLI and client
 
 This repository contains a CLI and Go client for the REST API of Confluent's Kafka Schema Registry.
 
+[![Build Status](https://travis-ci.org/datamountaineer/schema-registry.svg?branch=master)](https://travis-ci.org/datamountaineer/schema-registry)
 [![GoDoc](https://godoc.org/github.com/datamountaineer/schema-registry?status.svg)](https://godoc.org/github.com/datamountaineer/schema-registry)
 
 CLI
