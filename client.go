@@ -1,3 +1,4 @@
+// Package schemaregistry provides a client for Confluent's Kafka Schema Registry REST API.
 package schemaregistry
 
 import (
