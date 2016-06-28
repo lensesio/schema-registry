@@ -9,7 +9,7 @@ getcompatability [subject]
 A command line interface for the Confluent schema registry
 
 Usage:
-  schemaregistrycli [command]
+  schema-registry-cli [command]
 
 Available Commands:
   add         registers the schema provided through stdin
@@ -19,9 +19,9 @@ Available Commands:
   versions    lists all available versions
 
 Flags:
-  -h, --help         help for schemaregistrycli
+  -h, --help         help for schema-registry-cli
   -e, --url string   schema registry url (default "http://localhost:8081")
   -v, --verbose      be verbose
 
-Use "schemaregistrycli [command] --help" for more information about a command.
+Use "schema-registry-cli [command] --help" for more information about a command.
 ```
