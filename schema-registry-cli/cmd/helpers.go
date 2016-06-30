@@ -2,6 +2,8 @@ package cmd
 
 import (
 	"bufio"
+	"bytes"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -17,6 +19,18 @@ func stdinToString() string {
 		panic(err)
 	}
 	return string(bs)
+}
+
+func printSchema(sch schemaregistry.Schema) {
+	log.Printf("version: %d\n", sch.Version)
+	log.Printf("id: %d\n", sch.Id)
+	var indented bytes.Buffer
+	if err := json.Indent(&indented, []byte(sch.Schema), "", "  "); err != nil {
+		fmt.Println(sch.Schema) //isn't a json object, which is legal
+		return
+	}
+	indented.WriteTo(os.Stdout)
+	os.Stdout.WriteString("\n")
 }
 
 func getById(id int) error {
@@ -35,9 +49,7 @@ func getLatestBySubject(subj string) error {
 	if err != nil {
 		return err
 	}
-	log.Printf("version: %d\n", sch.Version)
-	log.Printf("id: %d\n", sch.Id)
-	fmt.Println(sch.Schema)
+	printSchema(sch)
 	return nil
 }
 
@@ -47,9 +59,7 @@ func getBySubjectVersion(subj string, ver int) error {
 	if err != nil {
 		return err
 	}
-	log.Printf("version: %d\n", sch.Version)
-	log.Printf("id: %d\n", sch.Id)
-	fmt.Println(sch.Schema)
+	printSchema(sch)
 	return nil
 }
 
