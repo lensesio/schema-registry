@@ -1,12 +1,18 @@
 package schemaregistry
 
 import (
+	"bytes"
+	"encoding/json"
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"reflect"
 	"strings"
 	"testing"
 )
+
+const testHost = "testhost:1337"
+const testUrl = "http://" + testHost
 
 type D func(req *http.Request) (*http.Response, error)
 
@@ -14,22 +20,104 @@ func (d D) Do(req *http.Request) (*http.Response, error) {
 	return d(req)
 }
 
-func TestSubjects(t *testing.T) {
+// verifies the http.Request, creates an http.Response
+func dummyHttpHandler(t *testing.T, method, path string, status int, reqBody, respBody interface{}) D {
 	d := D(func(req *http.Request) (*http.Response, error) {
-		if req.Method != "GET" {
-			t.Error()
+		if method != "" && req.Method != method {
+			t.Errorf("method is wrong, expected `%s`, got `%s`", method, req.Method)
+		}
+		if req.URL.Host != testHost {
+			t.Errorf("expected host `%s`, got `%s`", testHost, req.URL.Host)
+		}
+		if path != "" && req.URL.Path != path {
+			t.Errorf("path is wrong, expected `%s`, got `%s`", path, req.URL.Path)
+		}
+		if reqBody != nil {
+			expbs, err := json.Marshal(reqBody)
+			if err != nil {
+				t.Error(err)
+			}
+			bs, err := ioutil.ReadAll(req.Body)
+			mustEqual(t, strings.Trim(string(bs), "\r\n"), strings.Trim(string(expbs), "\r\n"))
 		}
 		var resp http.Response
-		resp.StatusCode = 200
-		resp.Body = ioutil.NopCloser(strings.NewReader(`["a","b"]`))
+		resp.StatusCode = status
+		if respBody != nil {
+			bs, err := json.Marshal(respBody)
+			if err != nil {
+				t.Error(err)
+			}
+			resp.Body = ioutil.NopCloser(bytes.NewReader(bs))
+		}
 		return &resp, nil
 	})
-	c := Client{url.URL{}, d}
+	return d
+}
+
+func getUrl() url.URL {
+	u, err := url.Parse(testUrl)
+	if err != nil {
+		panic(err)
+	}
+	return *u
+}
+
+func httpSuccess(t *testing.T, method, path string, reqBody, respBody interface{}) Client {
+	return Client{getUrl(), dummyHttpHandler(t, method, path, 200, reqBody, respBody)}
+}
+
+func httpError(t *testing.T, status, errCode int, errMsg string) Client {
+	return Client{getUrl(), dummyHttpHandler(t, "", "", status, nil, confluentError{errCode, errMsg})}
+}
+
+func mustEqual(t *testing.T, actual, expected interface{}) {
+	if !reflect.DeepEqual(actual, expected) {
+		t.Errorf("expected `%#v`, got `%#v`", expected, actual)
+	}
+}
+
+func TestSubjects(t *testing.T) {
+	subsIn := []string{"rollulus", "hello-subject"}
+	c := httpSuccess(t, "GET", "/subjects", nil, subsIn)
 	subs, err := c.Subjects()
 	if err != nil {
 		t.Error()
 	}
-	if len(subs) != 2 || subs[0] != "a" || subs[1] != "b" {
+	mustEqual(t, subs, subsIn)
+}
+
+func TestVersions(t *testing.T) {
+	versIn := []int{1, 2, 3}
+	c := httpSuccess(t, "GET", "/subjects/mysubject/versions", nil, versIn)
+	vers, err := c.Versions("mysubject")
+	if err != nil {
+		t.Error()
+	}
+	mustEqual(t, vers, versIn)
+}
+
+func TestIsRegistered_yes(t *testing.T) {
+	s := `{"x":"y"}`
+	ss := simpleSchema{s}
+	sIn := Schema{s, "mysubject", 4, 7}
+	c := httpSuccess(t, "POST", "/subjects/mysubject", ss, sIn)
+	isreg, sOut, err := c.IsRegistered("mysubject", s)
+	if err != nil {
+		t.Error()
+	}
+	if !isreg {
+		t.Error()
+	}
+	mustEqual(t, sOut, sIn)
+}
+
+func TestIsRegistered_not(t *testing.T) {
+	c := httpError(t, 404, schemaNotFound, "too bad")
+	isreg, _, err := c.IsRegistered("mysubject", "{}")
+	if err != nil {
+		t.Error()
+	}
+	if isreg {
 		t.Error()
 	}
 }
