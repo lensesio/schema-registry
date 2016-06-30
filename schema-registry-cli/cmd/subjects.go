@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"log"
 
 	"github.com/spf13/cobra"
 )
@@ -15,7 +16,10 @@ var subjectsCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		fmt.Printf("%v\n", subs)
+		log.Printf("there are %d subjects\n", len(subs))
+		for _, s := range subs {
+			fmt.Println(s)
+		}
 		return nil
 	},
 }
