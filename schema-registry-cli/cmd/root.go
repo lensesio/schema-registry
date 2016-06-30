@@ -12,7 +12,7 @@ import (
 )
 
 var cfgFile string
-var registryUrl string = schemaregistry.DefaultUrl
+var registryUrl string
 var verbose bool = false
 
 // RootCmd represents the base command when called without any subcommands
@@ -24,6 +24,7 @@ var RootCmd = &cobra.Command{
 		if !verbose {
 			log.SetOutput(ioutil.Discard)
 		}
+		log.Printf("schema registry url: %s\n", viper.Get("url"))
 	},
 }
 
@@ -37,26 +38,9 @@ func Execute() {
 }
 
 func init() {
-	cobra.OnInitialize(initConfig)
-
 	RootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "be verbose")
-	RootCmd.PersistentFlags().StringVarP(&registryUrl, "url", "e", schemaregistry.DefaultUrl, "schema registry url")
-
-	//RootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.schemaregistrycli.yaml)")
-}
-
-// initConfig reads in config file and ENV variables if set.
-func initConfig() {
-	if cfgFile != "" { // enable ability to specify config file via flag
-		viper.SetConfigFile(cfgFile)
-	}
-
-	viper.SetConfigName(".schemaregistrycli") // name of config file (without extension)
-	viper.AddConfigPath("$HOME")              // adding home directory as first search path
-	viper.AutomaticEnv()                      // read in environment variables that match
-
-	// If a config file is found, read it in.
-	if err := viper.ReadInConfig(); err == nil {
-		fmt.Println("Using config file:", viper.ConfigFileUsed())
-	}
+	RootCmd.PersistentFlags().StringVarP(&registryUrl, "url", "e", schemaregistry.DefaultUrl, "schema registry url, overrides SCHEMA_REGISTRY_URL")
+	viper.SetEnvPrefix("schema_registry")
+	viper.BindPFlag("url", RootCmd.PersistentFlags().Lookup("url"))
+	viper.BindEnv("url")
 }

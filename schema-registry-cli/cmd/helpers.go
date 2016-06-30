@@ -8,6 +8,7 @@ import (
 	"os"
 
 	"github.com/datamountaineer/schema-registry"
+	"github.com/spf13/viper"
 )
 
 func stdinToString() string {
@@ -19,7 +20,7 @@ func stdinToString() string {
 }
 
 func getById(id int) error {
-	cl := assertClient(registryUrl)
+	cl := assertClient()
 	sch, err := cl.GetSchemaById(id)
 	if err != nil {
 		return err
@@ -29,7 +30,7 @@ func getById(id int) error {
 }
 
 func getLatestBySubject(subj string) error {
-	cl := assertClient(registryUrl)
+	cl := assertClient()
 	sch, err := cl.GetLatestSchema(subj)
 	if err != nil {
 		return err
@@ -41,7 +42,7 @@ func getLatestBySubject(subj string) error {
 }
 
 func getBySubjectVersion(subj string, ver int) error {
-	cl := assertClient(registryUrl)
+	cl := assertClient()
 	sch, err := cl.GetSchemaBySubject(subj, ver)
 	if err != nil {
 		return err
@@ -52,8 +53,8 @@ func getBySubjectVersion(subj string, ver int) error {
 	return nil
 }
 
-func assertClient(endpoint string) *schemaregistry.Client {
-	c, err := schemaregistry.NewClient(registryUrl)
+func assertClient() *schemaregistry.Client {
+	c, err := schemaregistry.NewClient(viper.GetString("url"))
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(-1)

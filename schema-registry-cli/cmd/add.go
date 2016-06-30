@@ -16,7 +16,7 @@ var addCmd = &cobra.Command{
 		if len(args) != 1 {
 			return fmt.Errorf("expected 1 argument")
 		}
-		id, err := assertClient(registryUrl).RegisterNewSchema(args[0], stdinToString())
+		id, err := assertClient().RegisterNewSchema(args[0], stdinToString())
 		if err != nil {
 			return err
 		}

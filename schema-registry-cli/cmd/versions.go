@@ -14,7 +14,7 @@ var versionsCmd = &cobra.Command{
 		if len(args) != 1 {
 			return fmt.Errorf("expected 1 argument")
 		}
-		client := assertClient(registryUrl)
+		client := assertClient()
 		vers, err := client.Versions(args[0])
 		if err != nil {
 			return err

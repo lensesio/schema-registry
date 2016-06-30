@@ -11,7 +11,7 @@ var subjectsCmd = &cobra.Command{
 	Short: "lists all registered subjects",
 	Long:  ``,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		subs, err := assertClient(registryUrl).Subjects()
+		subs, err := assertClient().Subjects()
 		if err != nil {
 			return err
 		}

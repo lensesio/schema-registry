@@ -30,11 +30,13 @@ Available Commands:
 
 Flags:
   -h, --help         help for schema-registry-cli
-  -e, --url string   schema registry url (default "http://localhost:8081")
+  -e, --url string   schema registry url, overrides SCHEMA_REGISTRY_URL (default "http://localhost:8081")
   -v, --verbose      be verbose
 
 Use "schema-registry-cli [command] --help" for more information about a command.
 ```
+
+The schema registry url can be configured through the `SCHEMA_REGISTRY_URL` environment variable, and overridden through `--url`. When none is provided, `http://localhost:8081` is used as default.
 
 Client
 ------

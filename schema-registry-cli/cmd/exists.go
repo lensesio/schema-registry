@@ -14,7 +14,7 @@ var existsCmd = &cobra.Command{
 		if len(args) != 1 {
 			return fmt.Errorf("expected 1 argument")
 		}
-		isreg, sch, err := assertClient(registryUrl).IsRegistered(args[0], stdinToString())
+		isreg, sch, err := assertClient().IsRegistered(args[0], stdinToString())
 		if err != nil {
 			return err
 		}
