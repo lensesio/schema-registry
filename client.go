@@ -48,7 +48,17 @@ type httpDoer interface {
 }
 
 // A Client is a client for the schema registry.
-type Client struct {
+type Client interface {
+	Subjects() (subjects []string, err error)
+	Versions(subject string) (versions []int, err error)
+	RegisterNewSchema(subject, schema string) (int, error)
+	IsRegistered(subject, schema string) (bool, Schema, error)
+	GetSchemaById(id int) (string, error)
+	GetSchemaBySubject(subject string, ver int) (s Schema, err error)
+	GetLatestSchema(subject string) (s Schema, err error)
+}
+
+type client struct {
 	url    url.URL
 	client httpDoer
 }
@@ -62,7 +72,7 @@ func parseSchemaRegistryError(resp *http.Response) error {
 }
 
 // do performs http requests and json (de)serialization.
-func (c *Client) do(method, urlPath string, in interface{}, out interface{}) error {
+func (c *client) do(method, urlPath string, in interface{}, out interface{}) error {
 	u := c.url
 	u.Path = path.Join(u.Path, urlPath)
 	var rdp io.Reader
@@ -90,19 +100,19 @@ func (c *Client) do(method, urlPath string, in interface{}, out interface{}) err
 }
 
 // Subjects returns all registered subjects.
-func (c *Client) Subjects() (subjects []string, err error) {
+func (c *client) Subjects() (subjects []string, err error) {
 	err = c.do("GET", "subjects", nil, &subjects)
 	return
 }
 
 // Versions returns all schema version numbers registered for this subject.
-func (c *Client) Versions(subject string) (versions []int, err error) {
+func (c *client) Versions(subject string) (versions []int, err error) {
 	err = c.do("GET", fmt.Sprintf("subjects/%s/versions", subject), nil, &versions)
 	return
 }
 
 // RegisterNewSchema registers the given schema for this subject.
-func (c *Client) RegisterNewSchema(subject, schema string) (int, error) {
+func (c *client) RegisterNewSchema(subject, schema string) (int, error) {
 	var resp struct {
 		Id int `json:"id"`
 	}
@@ -111,7 +121,7 @@ func (c *Client) RegisterNewSchema(subject, schema string) (int, error) {
 }
 
 // IsRegistered tells if the given schema is registred for this subject.
-func (c *Client) IsRegistered(subject, schema string) (bool, Schema, error) {
+func (c *client) IsRegistered(subject, schema string) (bool, Schema, error) {
 	var fs Schema
 	err := c.do("POST", fmt.Sprintf("/subjects/%s", subject), simpleSchema{schema}, &fs)
 	// schema not found?
@@ -128,29 +138,29 @@ func (c *Client) IsRegistered(subject, schema string) (bool, Schema, error) {
 
 // GetSchemaById returns the schema for some id.
 // The schema registry only provides the schema itself, not the id, subject or version.
-func (c *Client) GetSchemaById(id int) (string, error) {
+func (c *client) GetSchemaById(id int) (string, error) {
 	var s Schema
 	err := c.do("GET", fmt.Sprintf("/schemas/ids/%d", id), nil, &s)
 	return s.Schema, err
 }
 
 // GetSchemaBySubject returns the schema for a particular subject and version.
-func (c *Client) GetSchemaBySubject(subject string, ver int) (s Schema, err error) {
+func (c *client) GetSchemaBySubject(subject string, ver int) (s Schema, err error) {
 	err = c.do("GET", fmt.Sprintf("/subjects/%s/versions/%d", subject, ver), nil, &s)
 	return
 }
 
 // GetLatestSchema returns the latest version of the subject's schema.
-func (c *Client) GetLatestSchema(subject string) (s Schema, err error) {
+func (c *client) GetLatestSchema(subject string) (s Schema, err error) {
 	err = c.do("GET", fmt.Sprintf("/subjects/%s/versions/latest", subject), nil, &s)
 	return
 }
 
 // NewClient returns a new Client that connects to baseurl.
-func NewClient(baseurl string) (*Client, error) {
+func NewClient(baseurl string) (Client, error) {
 	u, err := url.Parse(baseurl)
 	if err != nil {
 		return nil, err
 	}
-	return &Client{*u, http.DefaultClient}, nil
+	return &client{*u, http.DefaultClient}, nil
 }
