@@ -63,7 +63,7 @@ func getBySubjectVersion(subj string, ver int) error {
 	return nil
 }
 
-func assertClient() *schemaregistry.Client {
+func assertClient() schemaregistry.Client {
 	c, err := schemaregistry.NewClient(viper.GetString("url"))
 	if err != nil {
 		fmt.Println(err)
