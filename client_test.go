@@ -63,11 +63,11 @@ func getUrl() url.URL {
 }
 
 func httpSuccess(t *testing.T, method, path string, reqBody, respBody interface{}) Client {
-	return Client{getUrl(), dummyHttpHandler(t, method, path, 200, reqBody, respBody)}
+	return &client{getUrl(), dummyHttpHandler(t, method, path, 200, reqBody, respBody)}
 }
 
 func httpError(t *testing.T, status, errCode int, errMsg string) Client {
-	return Client{getUrl(), dummyHttpHandler(t, "", "", status, nil, confluentError{errCode, errMsg})}
+	return &client{getUrl(), dummyHttpHandler(t, "", "", status, nil, confluentError{errCode, errMsg})}
 }
 
 func mustEqual(t *testing.T, actual, expected interface{}) {
