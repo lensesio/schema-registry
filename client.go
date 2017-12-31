@@ -9,6 +9,7 @@ import (
 	"net/url"
 	"path"
 	"crypto/tls"
+	"errors"
 )
 
 // DefaultUrl is the address where a local schema registry listens by default.
@@ -165,6 +166,11 @@ func NewClient(baseurl string) (Client, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	if u.Scheme == "https" {
+		return nil, errors.New("func NewClient: This method only accepts HTTP URLs, but received an HTTPS URL.")
+	}
+
 	return &client{*u, http.DefaultClient, nil}, nil
 }
 
@@ -174,5 +180,10 @@ func NewTlsClient(baseurl string, tlsConfig *tls.Config) (Client, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	if u.Scheme != "https" {
+		return nil, errors.New("func NewTlsClient: This method only accepts HTTPS URLs.")
+	}
+
 	return &client{*u, http.DefaultClient, tlsConfig}, nil
 }
