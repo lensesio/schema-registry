@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/url"
 	"path"
+	"crypto/tls"
 )
 
 // DefaultUrl is the address where a local schema registry listens by default.
@@ -59,8 +60,9 @@ type Client interface {
 }
 
 type client struct {
-	url    url.URL
-	client httpDoer
+	url       url.URL
+	client    httpDoer
+	tlsConfig *tls.Config
 }
 
 func parseSchemaRegistryError(resp *http.Response) error {
@@ -71,7 +73,7 @@ func parseSchemaRegistryError(resp *http.Response) error {
 	return ce
 }
 
-// do performs http requests and json (de)serialization.
+// do performs http(s) requests and json (de)serialization.
 func (c *client) do(method, urlPath string, in interface{}, out interface{}) error {
 	u := c.url
 	u.Path = path.Join(u.Path, urlPath)
@@ -83,6 +85,7 @@ func (c *client) do(method, urlPath string, in interface{}, out interface{}) err
 			wr.CloseWithError(json.NewEncoder(wr).Encode(in))
 		}()
 	}
+
 	req, err := http.NewRequest(method, u.String(), rdp)
 	req.Header.Add("Accept", "application/vnd.schemaregistry.v1+json, application/vnd.schemaregistry+json, application/json")
 	if err != nil {
@@ -162,5 +165,14 @@ func NewClient(baseurl string) (Client, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &client{*u, http.DefaultClient}, nil
+	return &client{*u, http.DefaultClient, nil}, nil
+}
+
+// NewClient returns a new Client that connects to baseurl.
+func NewTlsClient(baseurl string, tlsConfig *tls.Config) (Client, error) {
+	u, err := url.Parse(baseurl)
+	if err != nil {
+		return nil, err
+	}
+	return &client{*u, http.DefaultClient, tlsConfig}, nil
 }
