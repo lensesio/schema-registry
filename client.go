@@ -185,5 +185,18 @@ func NewTlsClient(baseurl string, tlsConfig *tls.Config) (Client, error) {
 		return nil, errors.New("func NewTlsClient: This method only accepts HTTPS URLs.")
 	}
 
-	return &client{*u, http.DefaultClient, tlsConfig}, nil
+	// TODO: Consider using golang.org/x/net/http2 to enable HTTP/2 with HTTPS connections
+	httpsClientTransport := &http.Transport{
+		TLSClientConfig: tlsConfig,
+	}
+
+	httpsClient := &http.Client{
+		Transport: httpsClientTransport,
+	}
+
+	return &client{
+		url:       *u,
+		client:    httpsClient,
+		tlsConfig: tlsConfig,
+	}, nil
 }
