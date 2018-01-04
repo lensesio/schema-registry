@@ -44,9 +44,39 @@ Client
 The client package provides a client to deal with the registry from code. It is used by the CLI internally. Usage looks like:
 
 ```go
-import "github.com/datamountaineer/schema-registry"
+import "github.com/Landoop/schema-registry"
 
 client, _ := schemaregistry.NewClient(schemaregistry.DefaultUrl)
+client.Subjects()
+```
+
+Or, to use with a Schema Registry endpoint listening on HTTPS:
+
+```go
+import (
+    "crypto/tls"
+    "crypto/x509"
+    "io/ioutil"
+    "github.com/Landoop/schema-registry"
+)
+
+// Create a TLS config to use to connect to Schema Registry. This config will permit TLS connections to an endpoint
+// whose TLS cert is signed by the given caFile.
+caCert, err := ioutil.ReadFile("/path/to/ca/file")
+if err != nil {
+    panic(err)
+}
+
+caCertPool := x509.NewCertPool()
+caCertPool.AppendCertsFromPEM(caCert)
+
+tlsConfig :=  &tls.Config{
+    RootCAs:            caCertPool,
+    InsecureSkipVerify: true,
+}
+
+// Create the Schema Registry client
+client, _ := schemaregistry.NewTlsClient(schemaregistry.DefaultUrl, tlsConfig)
 client.Subjects()
 ```
 
