@@ -1,4 +1,4 @@
-Confluent Kafka Schema Registry CLI and client
+Schema Registry CLI and client
 ==============================================
 
 This repository contains a Command Line Interface (CLI) and a Go client for the REST API of Confluent's Kafka Schema Registry.
