@@ -6,14 +6,17 @@ import (
 	"log"
 	"os"
 
-	"github.com/datamountaineer/schema-registry"
+	"github.com/landoop/schema-registry"
+
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
 
-var cfgFile string
-var registryUrl string
-var verbose bool = false
+var (
+	cfgFile     string
+	registryURL string
+	verbose     bool
+)
 
 // RootCmd represents the base command when called without any subcommands
 var RootCmd = &cobra.Command{
@@ -39,7 +42,7 @@ func Execute() {
 
 func init() {
 	RootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "be verbose")
-	RootCmd.PersistentFlags().StringVarP(&registryUrl, "url", "e", schemaregistry.DefaultUrl, "schema registry url, overrides SCHEMA_REGISTRY_URL")
+	RootCmd.PersistentFlags().StringVarP(&registryURL, "url", "e", schemaregistry.DefaultURL, "schema registry url, overrides SCHEMA_REGISTRY_URL")
 	viper.SetEnvPrefix("schema_registry")
 	viper.BindPFlag("url", RootCmd.PersistentFlags().Lookup("url"))
 	viper.BindEnv("url")

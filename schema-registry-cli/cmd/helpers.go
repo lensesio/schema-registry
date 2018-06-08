@@ -9,7 +9,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/datamountaineer/schema-registry"
+	"github.com/landoop/schema-registry"
 	"github.com/spf13/viper"
 )
 
@@ -23,7 +23,7 @@ func stdinToString() string {
 
 func printSchema(sch schemaregistry.Schema) {
 	log.Printf("version: %d\n", sch.Version)
-	log.Printf("id: %d\n", sch.Id)
+	log.Printf("id: %d\n", sch.ID)
 	var indented bytes.Buffer
 	if err := json.Indent(&indented, []byte(sch.Schema), "", "  "); err != nil {
 		fmt.Println(sch.Schema) //isn't a json object, which is legal
@@ -33,9 +33,9 @@ func printSchema(sch schemaregistry.Schema) {
 	os.Stdout.WriteString("\n")
 }
 
-func getById(id int) error {
+func getByID(id int) error {
 	cl := assertClient()
-	sch, err := cl.GetSchemaById(id)
+	sch, err := cl.GetSchemaByID(id)
 	if err != nil {
 		return err
 	}
@@ -63,7 +63,7 @@ func getBySubjectVersion(subj string, ver int) error {
 	return nil
 }
 
-func assertClient() schemaregistry.Client {
+func assertClient() *schemaregistry.Client {
 	c, err := schemaregistry.NewClient(viper.GetString("url"))
 	if err != nil {
 		fmt.Println(err)

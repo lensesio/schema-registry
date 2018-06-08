@@ -20,7 +20,7 @@ var existsCmd = &cobra.Command{
 		}
 		fmt.Printf("exists: %v\n", isreg)
 		if isreg {
-			fmt.Printf("id: %d\n", sch.Id)
+			fmt.Printf("id: %d\n", sch.ID)
 			fmt.Printf("version: %d\n", sch.Version)
 		}
 		return nil
