@@ -17,7 +17,7 @@ import (
 )
 
 // DefaultURL is the address where a local schema registry listens by default.
-var DefaultURL = "http://localhost:8081"
+const DefaultURL = "http://localhost:8081"
 
 type (
 	httpDoer interface {

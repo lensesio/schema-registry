@@ -7,6 +7,11 @@ import (
 	"net/url"
 )
 
+// DefaultUrl is the address where a local schema registry listens by default.
+//
+// DEPRECATED: Use `schemaregistry.DefaultURL` instead.
+const DefaultUrl = DefaultURL
+
 // GetSchemaById returns the schema for some id.
 // The schema registry only provides the schema itself, not the id, subject or version.
 //
