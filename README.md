@@ -5,6 +5,7 @@ This repository contains a Command Line Interface (CLI) and a Go client for the 
 
 [![Build Status](https://travis-ci.org/Landoop/schema-registry.svg?branch=master)](https://travis-ci.org/Landoop/schema-registry)
 [![GoDoc](https://godoc.org/github.com/Landoop/schema-registry?status.svg)](https://godoc.org/github.com/Landoop/schema-registry)
+[![Chat](https://img.shields.io/badge/join-%20chat-00BCD4.svg?style=flat-square)](https://slackpass.io/landoop-community)
 
 CLI
 ---
