@@ -23,7 +23,7 @@ version is specified, the latest version is returned.
 		var err error
 		switch {
 		case len(args) == 1 && idParseErr == nil:
-			err = getById(id)
+			err = getByID(id)
 		case len(args) == 1 && idParseErr != nil:
 			err = getLatestBySubject(args[0])
 		case len(args) == 2:

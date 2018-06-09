@@ -1,4 +1,15 @@
 language: go
-
+os:
+  - linux
+  - osx
 go:
-    - tip
+  - "go1.10"
+go_import_path: github.com/landoop/schema-registry
+
+env:
+  global:
+    - GOCACHE=off
+install:
+  - go get ./...
+script:
+  - go test -v -cover ./...

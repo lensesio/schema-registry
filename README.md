@@ -3,15 +3,16 @@ Schema Registry CLI and client
 
 This repository contains a Command Line Interface (CLI) and a Go client for the REST API of Confluent's Kafka Schema Registry.
 
-[![Build Status](https://travis-ci.org/landoop/schema-registry.svg?branch=master)](https://travis-ci.org/landoop/schema-registry)
-[![GoDoc](https://godoc.org/github.com/datamountaineer/schema-registry?status.svg)](https://godoc.org/github.com/datamountaineer/schema-registry)
+[![Build Status](https://travis-ci.org/Landoop/schema-registry.svg?branch=master)](https://travis-ci.org/Landoop/schema-registry)
+[![GoDoc](https://godoc.org/github.com/Landoop/schema-registry?status.svg)](https://godoc.org/github.com/Landoop/schema-registry)
+[![Chat](https://img.shields.io/badge/join-%20chat-00BCD4.svg?style=flat-square)](https://slackpass.io/landoop-community)
 
 CLI
 ---
 
 To install the CLI, assuming a properly setup Go installation, do:
 
-`go get github.com/datamountaineer/schema-registry/schema-registry-cli`
+`go get -u github.com/landoop/schema-registry/schema-registry-cli`
 
 After that, the CLI is found in `$GOPATH/bin/schema-registry-cli`. Running `schema-registry-cli` without arguments gives:
 
@@ -44,7 +45,7 @@ Client
 The client package provides a client to deal with the registry from code. It is used by the CLI internally. Usage looks like:
 
 ```go
-import "github.com/Landoop/schema-registry"
+import "github.com/landoop/schema-registry"
 
 client, _ := schemaregistry.NewClient(schemaregistry.DefaultUrl)
 client.Subjects()
@@ -57,7 +58,8 @@ import (
     "crypto/tls"
     "crypto/x509"
     "io/ioutil"
-    "github.com/Landoop/schema-registry"
+
+    "github.com/landoop/schema-registry"
 )
 
 // Create a TLS config to use to connect to Schema Registry. This config will permit TLS connections to an endpoint
@@ -75,9 +77,17 @@ tlsConfig :=  &tls.Config{
     InsecureSkipVerify: true,
 }
 
+httpsClientTransport := &http.Transport{
+  TLSClientConfig: tlsConfig,
+}
+
+httpsClient := &http.Client{
+  Transport: httpsClientTransport,
+}
+
 // Create the Schema Registry client
-client, _ := schemaregistry.NewTlsClient(schemaregistry.DefaultUrl, tlsConfig)
+client, _ := schemaregistry.NewClient(baseurl, UsingClient(httpsClient))
 client.Subjects()
 ```
 
-The documentation of the package can be found here: [![GoDoc](https://godoc.org/github.com/datamountaineer/schema-registry?status.svg)](https://godoc.org/github.com/datamountaineer/schema-registry)
+The documentation of the package can be found here: [![GoDoc](https://godoc.org/github.com/Landoop/schema-registry?status.svg)](https://godoc.org/github.com/Landoop/schema-registry)

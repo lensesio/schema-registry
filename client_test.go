@@ -5,14 +5,13 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
-	"net/url"
 	"reflect"
 	"strings"
 	"testing"
 )
 
 const testHost = "testhost:1337"
-const testUrl = "http://" + testHost
+const testURL = "http://" + testHost
 
 type D func(req *http.Request) (*http.Response, error)
 
@@ -21,7 +20,7 @@ func (d D) Do(req *http.Request) (*http.Response, error) {
 }
 
 // verifies the http.Request, creates an http.Response
-func dummyHttpHandler(t *testing.T, method, path string, status int, reqBody, respBody interface{}) D {
+func dummyHTTPHandler(t *testing.T, method, path string, status int, reqBody, respBody interface{}) D {
 	d := D(func(req *http.Request) (*http.Response, error) {
 		if method != "" && req.Method != method {
 			t.Errorf("method is wrong, expected `%s`, got `%s`", method, req.Method)
@@ -41,6 +40,7 @@ func dummyHttpHandler(t *testing.T, method, path string, status int, reqBody, re
 			mustEqual(t, strings.Trim(string(bs), "\r\n"), strings.Trim(string(expbs), "\r\n"))
 		}
 		var resp http.Response
+		resp.Header = http.Header{contentTypeHeaderKey: []string{contentTypeJSON}}
 		resp.StatusCode = status
 		if respBody != nil {
 			bs, err := json.Marshal(respBody)
@@ -54,20 +54,12 @@ func dummyHttpHandler(t *testing.T, method, path string, status int, reqBody, re
 	return d
 }
 
-func getUrl() url.URL {
-	u, err := url.Parse(testUrl)
-	if err != nil {
-		panic(err)
-	}
-	return *u
+func httpSuccess(t *testing.T, method, path string, reqBody, respBody interface{}) *Client {
+	return &Client{testURL, dummyHTTPHandler(t, method, path, 200, reqBody, respBody)}
 }
 
-func httpSuccess(t *testing.T, method, path string, reqBody, respBody interface{}) Client {
-	return &client{getUrl(), dummyHttpHandler(t, method, path, 200, reqBody, respBody), nil}
-}
-
-func httpError(t *testing.T, status, errCode int, errMsg string) Client {
-	return &client{getUrl(), dummyHttpHandler(t, "", "", status, nil, confluentError{errCode, errMsg}), nil}
+func httpError(t *testing.T, status, errCode int, errMsg string) *Client {
+	return &Client{testURL, dummyHTTPHandler(t, "", "", status, nil, ResourceError{ErrorCode: errCode, Message: errMsg})}
 }
 
 func mustEqual(t *testing.T, actual, expected interface{}) {
@@ -98,7 +90,7 @@ func TestVersions(t *testing.T) {
 
 func TestIsRegistered_yes(t *testing.T) {
 	s := `{"x":"y"}`
-	ss := simpleSchema{s}
+	ss := schemaOnlyJSON{s}
 	sIn := Schema{s, "mysubject", 4, 7}
 	c := httpSuccess(t, "POST", "/subjects/mysubject", ss, sIn)
 	isreg, sOut, err := c.IsRegistered("mysubject", s)
@@ -112,12 +104,12 @@ func TestIsRegistered_yes(t *testing.T) {
 }
 
 func TestIsRegistered_not(t *testing.T) {
-	c := httpError(t, 404, schemaNotFound, "too bad")
+	c := httpError(t, 404, schemaNotFoundCode, "too bad")
 	isreg, _, err := c.IsRegistered("mysubject", "{}")
 	if err != nil {
-		t.Error()
+		t.Fatal(err)
 	}
 	if isreg {
-		t.Error()
+		t.Fatalf("is registered: %v", err)
 	}
 }
