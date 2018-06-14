@@ -238,7 +238,7 @@ func (c *Client) do(method, path, contentType string, send []byte) (*http.Respon
 
 	// response accept gziped content.
 	req.Header.Add(acceptEncodingHeaderKey, gzipEncodingHeaderValue)
-	req.Header.Add(acceptHeaderKey, contentTypeSchemaJSON+"application/vnd.schemaregistry+json, application/json")
+	req.Header.Add(acceptHeaderKey, contentTypeSchemaJSON+", application/vnd.schemaregistry+json, application/json")
 
 	// send the request and check the response for any connection & authorization errors here.
 	resp, err := c.client.Do(req)
