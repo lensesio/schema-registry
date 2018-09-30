@@ -459,6 +459,12 @@ type (
 		Version int `json:"version"`
 		ID      int `json:"id,omitempty"`
 	}
+
+	// Config describes a subject or globa schema-registry configuration
+	Config struct {
+		// CompatibilityLevel mode of subject or global
+		CompatibilityLevel string `json:"compatibilityLevel"`
+	}
 )
 
 // RegisterNewSchema registers a schema.
@@ -591,4 +597,28 @@ func (c *Client) GetSchemaBySubject(subject string, versionID int) (Schema, erro
 // See `GetSchemaAtVersion` to retrieve a subject schema by a specific version.
 func (c *Client) GetLatestSchema(subject string) (Schema, error) {
 	return c.getSubjectSchemaAtVersion(subject, SchemaLatestVersion)
+}
+
+// getConfigSubject returns the Config of global or for a given subject. It handles 404 error in a
+// different way, since not-found for a subject configuration means it's using global.
+func (c *Client) getConfigSubject(subject string) (Config, error) {
+	var err error
+	var config = Config{}
+
+	path := fmt.Sprintf("/config/%s", subject)
+	resp, respErr := c.do(http.MethodGet, path, "", nil)
+	if respErr != nil && respErr.(ResourceError).ErrorCode != 404 {
+		return config, respErr
+	}
+	if resp != nil {
+		err = c.readJSON(resp, &config)
+	}
+
+	return config, err
+}
+
+// GetConfig returns the configuration (Config type) for global Schema-Registry or a specific
+// subject. When Config returned has "compatibilityLevel" empty, it's using global settings.
+func (c *Client) GetConfig(subject string) (Config, error) {
+	return c.getConfigSubject(subject)
 }
