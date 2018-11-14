@@ -24,6 +24,7 @@ Usage:
 
 Available Commands:
   add         registers the schema provided through stdin
+  compatible  tests compatibility between a schema from stdin and a given subject
   exists      checks if the schema provided through stdin exists for the subject
   get         retrieves a schema specified by id or subject
   get-config  retrieves global or suject specific configuration
