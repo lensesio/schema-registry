@@ -63,6 +63,26 @@ func getBySubjectVersion(subj string, ver int) error {
 	return nil
 }
 
+func printConfig(cfg schemaregistry.Config, subj string) {
+	if subj == "" {
+		subj = "global"
+	}
+	if cfg.CompatibilityLevel == "" {
+		cfg.CompatibilityLevel = "not defined, using global"
+	}
+	fmt.Printf("%s compatibility-level: %s\n", subj, cfg.CompatibilityLevel)
+}
+
+func getConfig(subj string) error {
+	cl := assertClient()
+	cfg, err := cl.GetConfig(subj)
+	if err != nil {
+		return err
+	}
+	printConfig(cfg, subj)
+	return nil
+}
+
 func assertClient() *schemaregistry.Client {
 	c, err := schemaregistry.NewClient(viper.GetString("url"))
 	if err != nil {

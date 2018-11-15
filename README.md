@@ -26,6 +26,7 @@ Available Commands:
   add         registers the schema provided through stdin
   exists      checks if the schema provided through stdin exists for the subject
   get         retrieves a schema specified by id or subject
+  get-config  retrieves global or suject specific configuration
   subjects    lists all registered subjects
   versions    lists all available versions
 
