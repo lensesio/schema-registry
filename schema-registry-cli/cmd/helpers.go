@@ -2,14 +2,14 @@ package cmd
 
 import (
 	"bufio"
-	"bytes"
-	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
 
-	"github.com/landoop/schema-registry"
+	"github.com/hokaccha/go-prettyjson"
+
+	schemaregistry "github.com/landoop/schema-registry"
 	"github.com/spf13/viper"
 )
 
@@ -24,12 +24,13 @@ func stdinToString() string {
 func printSchema(sch schemaregistry.Schema) {
 	log.Printf("version: %d\n", sch.Version)
 	log.Printf("id: %d\n", sch.ID)
-	var indented bytes.Buffer
-	if err := json.Indent(&indented, []byte(sch.Schema), "", "  "); err != nil {
+
+	pretty, err := prettyjson.Format([]byte(sch.Schema))
+	if err != nil {
 		fmt.Println(sch.Schema) //isn't a json object, which is legal
 		return
 	}
-	indented.WriteTo(os.Stdout)
+	os.Stdout.Write(pretty)
 	os.Stdout.WriteString("\n")
 }
 
