@@ -253,7 +253,7 @@ func (c *Client) do(method, path, contentType string, send []byte) (*http.Respon
 
 		if strings.Contains(respContentType, "text/html") {
 			// if the body is html, then don't read it, it doesn't contain the raw info we need.
-		} else if strings.Contains(respContentType, "application/json") {
+		} else if strings.Contains(respContentType, "json") {
 			// if it's json try to read it as confluent's specific error json.
 			var resErr ResourceError
 			c.readJSON(resp, &resErr)
