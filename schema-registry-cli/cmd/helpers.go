@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"bufio"
-	"bytes"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -26,14 +25,12 @@ func printSchema(sch schemaregistry.Schema) {
 	log.Printf("version: %d\n", sch.Version)
 	log.Printf("id: %d\n", sch.ID)
 
-	var formatted bytes.Buffer
 	pretty, err := prettyjson.Format([]byte(sch.Schema))
 	if err != nil {
 		fmt.Println(sch.Schema) //isn't a json object, which is legal
 		return
 	}
-	formatted.Write(pretty)
-	formatted.WriteTo(os.Stdout)
+	os.Stdout.Write(pretty)
 	os.Stdout.WriteString("\n")
 }
 
