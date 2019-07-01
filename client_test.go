@@ -78,6 +78,36 @@ func TestSubjects(t *testing.T) {
 	mustEqual(t, subs, subsIn)
 }
 
+func TestConfigWithGenericHTTPClient(t *testing.T) {
+	// Prime dummy handler with any successful request: we just want to see that it's called
+	// when passed to NewClient via UsingClient()
+	subsIn := []string{"rollulus", "hello-subject"}
+	d := dummyHTTPHandler(t, "GET", "/subjects", 200, nil, subsIn)
+	c, err := NewClient(testHost, UsingClient(d))
+	if err != nil {
+		t.Error(err)
+	}
+	subs, err := c.Subjects()
+	if err != nil {
+		t.Error(err)
+	}
+	mustEqual(t, subs, subsIn)
+}
+
+func TestNetHTTPClientTransportConfigured(t *testing.T) {
+	httpClient := &http.Client{}
+	c, err := NewClient(DefaultURL, UsingClient(httpClient))
+	if err != nil {
+		t.Error(err)
+	}
+	if c.client != httpClient {
+		t.Error()
+	}
+	if httpClient.Transport == nil {
+		t.Error()
+	}
+}
+
 func TestVersions(t *testing.T) {
 	versIn := []int{1, 2, 3}
 	c := httpSuccess(t, "GET", "/subjects/mysubject/versions", nil, versIn)

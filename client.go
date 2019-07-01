@@ -39,16 +39,22 @@ type (
 )
 
 // UsingClient modifies the underline HTTP Client that schema registry is using for contact with the backend server.
-func UsingClient(httpClient *http.Client) Option {
+func UsingClient(httpClient httpDoer) Option {
 	return func(c *Client) {
 		if httpClient == nil {
 			return
 		}
 
-		transport := getTransportLayer(httpClient, 0)
-		httpClient.Transport = transport
-
 		c.client = httpClient
+
+		netHttpClient, ok := httpClient.(*http.Client)
+
+		if !ok {
+			return
+		}
+
+		transport := getTransportLayer(netHttpClient, 0)
+		netHttpClient.Transport = transport
 	}
 }
 
