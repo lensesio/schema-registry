@@ -84,6 +84,15 @@ func getConfig(subj string) error {
 	return nil
 }
 
+func deleteSubject(subj string) error {
+	cl := assertClient()
+	_, err := cl.DeleteSubject(subj)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func assertClient() *schemaregistry.Client {
 	c, err := schemaregistry.NewClient(viper.GetString("url"))
 	if err != nil {
