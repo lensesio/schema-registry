@@ -32,6 +32,8 @@ Available Commands:
   versions    lists all available versions
 
 Flags:
+  -p, --basic-auth-pass string   Password for basic auth, overrides SCHEMA_REGISTRY_BASIC_AUTH_PASS
+  -u, --basic-auth-user string   User for basic auth, overrides SCHEMA_REGISTRY_BASIC_AUTH_USER
   -h, --help         help for schema-registry-cli
   -n, --no-color     dont color output
   -e, --url string   schema registry url, overrides SCHEMA_REGISTRY_URL (default "http://localhost:8081")
