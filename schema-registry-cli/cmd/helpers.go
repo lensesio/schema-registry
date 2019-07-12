@@ -8,9 +8,9 @@ import (
 	"os"
 
 	"github.com/hokaccha/go-prettyjson"
-
-	schemaregistry "github.com/landoop/schema-registry"
 	"github.com/spf13/viper"
+
+	schemaregistry "github.com/coursehero/schema-registry"
 )
 
 func stdinToString() string {
@@ -98,11 +98,8 @@ func assertClient() *schemaregistry.Client {
 	var err error
 	if viper.GetString("basic_auth_user") != "" && viper.GetString("basic_auth_pass") != "" {
 		// Use Basic Authentication
-		b := &BasicAuthCredential{
-			Username: viper.GetString("basic_auth_user"),
-			Password: viper.GetString("basic_auth_pass"),
-		}
-		c, err = schemaregistry.NewClient(viper.GetString("url"), schemaregistry.UsingClient(b.GetClient()))
+		c, err = schemaregistry.NewClientWithBasicAuth(viper.GetString("url"),
+			viper.GetString("basic_auth_user"), viper.GetString("basic_auth_pass"))
 	} else {
 		c, err = schemaregistry.NewClient(viper.GetString("url"))
 	}

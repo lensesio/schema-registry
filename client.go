@@ -25,8 +25,8 @@ type (
 	}
 	// Client is the registry schema REST API client.
 	Client struct {
-		baseURL string
-
+		baseURL   string
+		basicAuth *BasicAuthCredential
 		// the client is created on the `NewClient` function, it can be customized via options.
 		client httpDoer
 	}
@@ -123,6 +123,25 @@ func NewClient(baseURL string, options ...Option) (*Client, error) {
 	}
 
 	c := &Client{baseURL: baseURL}
+	for _, opt := range options {
+		opt(c)
+	}
+
+	if c.client == nil {
+		httpClient := &http.Client{}
+		UsingClient(httpClient)(c)
+	}
+
+	return c, nil
+}
+
+func NewClientWithBasicAuth(baseURL string, user string, pass string, options ...Option) (*Client, error) {
+	baseURL = formatBaseURL(baseURL)
+	if _, err := url.Parse(baseURL); err != nil {
+		return nil, err
+	}
+	b := &BasicAuthCredential{Username: user, Password: pass}
+	c := &Client{baseURL: baseURL, basicAuth: b}
 	for _, opt := range options {
 		opt(c)
 	}
@@ -239,7 +258,9 @@ func (c *Client) do(method, path, contentType string, send []byte) (*http.Respon
 	// response accept gziped content.
 	req.Header.Add(acceptEncodingHeaderKey, gzipEncodingHeaderValue)
 	req.Header.Add(acceptHeaderKey, contentTypeSchemaJSON+", application/vnd.schemaregistry+json, application/json")
-
+	if c.basicAuth != nil {
+		req.SetBasicAuth(c.basicAuth.Username, c.basicAuth.Password)
+	}
 	// send the request and check the response for any connection & authorization errors here.
 	resp, err := c.client.Do(req)
 	if err != nil {
