@@ -12,6 +12,8 @@ import (
 
 const testHost = "testhost:1337"
 const testURL = "http://" + testHost
+const testUsername = "test"
+const testPassword = "password"
 
 type D func(req *http.Request) (*http.Response, error)
 
@@ -20,8 +22,18 @@ func (d D) Do(req *http.Request) (*http.Response, error) {
 }
 
 // verifies the http.Request, creates an http.Response
-func dummyHTTPHandler(t *testing.T, method, path string, status int, reqBody, respBody interface{}) D {
+func dummyHTTPHandler(t *testing.T, authEnabled bool, method, path string, status int, reqBody, respBody interface{}) D {
 	d := D(func(req *http.Request) (*http.Response, error) {
+		if authEnabled {
+			authHeader := req.Header.Get("Authorization")
+			if authHeader == "" {
+				t.Error("basic auth is enabled but Authorization header is not set")
+			}
+			basicAuth := basicAuth{testUsername, testPassword}
+			if authHeader != basicAuth.String() {
+				t.Errorf("basic auth header is enabled but credentials do not match: %s:%s", testUsername, testPassword)
+			}
+		}
 		if method != "" && req.Method != method {
 			t.Errorf("method is wrong, expected `%s`, got `%s`", method, req.Method)
 		}
@@ -54,12 +66,20 @@ func dummyHTTPHandler(t *testing.T, method, path string, status int, reqBody, re
 	return d
 }
 
-func httpSuccess(t *testing.T, method, path string, reqBody, respBody interface{}) *Client {
-	return &Client{testURL, dummyHTTPHandler(t, method, path, 200, reqBody, respBody)}
+func httpSuccess(t *testing.T, authEnabled bool, method, path string, reqBody, respBody interface{}) *Client {
+	client := &Client{testURL, dummyHTTPHandler(t, authEnabled, method, path, 200, reqBody, respBody), nil}
+	if authEnabled {
+		client.SetBasicAuth(testUsername, testPassword)
+	}
+	return client
 }
 
-func httpError(t *testing.T, status, errCode int, errMsg string) *Client {
-	return &Client{testURL, dummyHTTPHandler(t, "", "", status, nil, ResourceError{ErrorCode: errCode, Message: errMsg})}
+func httpError(t *testing.T, authEnabled bool, status, errCode int, errMsg string) *Client {
+	client := &Client{testURL, dummyHTTPHandler(t, authEnabled, "", "", status, nil, ResourceError{ErrorCode: errCode, Message: errMsg}), nil}
+	if authEnabled {
+		client.SetBasicAuth(testUsername, testPassword)
+	}
+	return client
 }
 
 func mustEqual(t *testing.T, actual, expected interface{}) {
@@ -68,48 +88,72 @@ func mustEqual(t *testing.T, actual, expected interface{}) {
 	}
 }
 
+var params = []struct {
+	name        string
+	authEnabled bool
+}{
+	{"basic auth enabled", true},
+	{"basic auth disabled", false},
+}
+
 func TestSubjects(t *testing.T) {
-	subsIn := []string{"rollulus", "hello-subject"}
-	c := httpSuccess(t, "GET", "/subjects", nil, subsIn)
-	subs, err := c.Subjects()
-	if err != nil {
-		t.Error()
+	for _, tt := range params {
+		t.Run(tt.name, func(t *testing.T) {
+			subsIn := []string{"rollulus", "hello-subject"}
+			c := httpSuccess(t, tt.authEnabled, "GET", "/subjects", nil, subsIn)
+			subs, err := c.Subjects()
+			if err != nil {
+				t.Error()
+			}
+			mustEqual(t, subs, subsIn)
+		})
 	}
-	mustEqual(t, subs, subsIn)
 }
 
 func TestVersions(t *testing.T) {
-	versIn := []int{1, 2, 3}
-	c := httpSuccess(t, "GET", "/subjects/mysubject/versions", nil, versIn)
-	vers, err := c.Versions("mysubject")
-	if err != nil {
-		t.Error()
+	for _, tt := range params {
+		t.Run(tt.name, func(t *testing.T) {
+			versIn := []int{1, 2, 3}
+			c := httpSuccess(t, tt.authEnabled, "GET", "/subjects/mysubject/versions", nil, versIn)
+			vers, err := c.Versions("mysubject")
+			if err != nil {
+				t.Error()
+			}
+			mustEqual(t, vers, versIn)
+		})
 	}
-	mustEqual(t, vers, versIn)
 }
 
 func TestIsRegistered_yes(t *testing.T) {
 	s := `{"x":"y"}`
 	ss := schemaOnlyJSON{s}
 	sIn := Schema{s, "mysubject", 4, 7}
-	c := httpSuccess(t, "POST", "/subjects/mysubject", ss, sIn)
-	isreg, sOut, err := c.IsRegistered("mysubject", s)
-	if err != nil {
-		t.Error()
+	for _, tt := range params {
+		t.Run(tt.name, func(t *testing.T) {
+			c := httpSuccess(t, tt.authEnabled, "POST", "/subjects/mysubject", ss, sIn)
+			isreg, sOut, err := c.IsRegistered("mysubject", s)
+			if err != nil {
+				t.Error()
+			}
+			if !isreg {
+				t.Error()
+			}
+			mustEqual(t, sOut, sIn)
+		})
 	}
-	if !isreg {
-		t.Error()
-	}
-	mustEqual(t, sOut, sIn)
 }
 
 func TestIsRegistered_not(t *testing.T) {
-	c := httpError(t, 404, schemaNotFoundCode, "too bad")
-	isreg, _, err := c.IsRegistered("mysubject", "{}")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if isreg {
-		t.Fatalf("is registered: %v", err)
+	for _, tt := range params {
+		t.Run(tt.name, func(t *testing.T) {
+			c := httpError(t, tt.authEnabled, 404, schemaNotFoundCode, "too bad")
+			isreg, _, err := c.IsRegistered("mysubject", "{}")
+			if err != nil {
+				t.Fatal(err)
+			}
+			if isreg {
+				t.Fatalf("is registered: %v", err)
+			}
+		})
 	}
 }

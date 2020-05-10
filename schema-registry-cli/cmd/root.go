@@ -16,6 +16,8 @@ import (
 var (
 	cfgFile     string
 	registryURL string
+	username    string
+	password    string
 	verbose     bool
 	nocolor     bool
 )
@@ -49,7 +51,13 @@ func init() {
 	RootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "be verbose")
 	RootCmd.PersistentFlags().BoolVarP(&nocolor, "no-color", "n", false, "dont color output")
 	RootCmd.PersistentFlags().StringVarP(&registryURL, "url", "e", schemaregistry.DefaultURL, "schema registry url, overrides SCHEMA_REGISTRY_URL")
+	RootCmd.PersistentFlags().StringVarP(&username, "username", "u", "", "schema registy basic auth username, overrides SCHEMA_REGISTRY_USERNAME")
+	RootCmd.PersistentFlags().StringVarP(&password, "password", "p", "", "schema registry basic auth password, overrides SCHEMA_REGISTRY_PASSWORD")
 	viper.SetEnvPrefix("schema_registry")
 	viper.BindPFlag("url", RootCmd.PersistentFlags().Lookup("url"))
 	viper.BindEnv("url")
+	viper.BindPFlag("username", RootCmd.PersistentFlags().Lookup("username"))
+	viper.BindEnv("username")
+	viper.BindPFlag("password", RootCmd.PersistentFlags().Lookup("password"))
+	viper.BindEnv("password")
 }

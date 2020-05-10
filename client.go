@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"compress/gzip"
 	"crypto/tls"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -23,12 +24,20 @@ type (
 	httpDoer interface {
 		Do(req *http.Request) (resp *http.Response, err error)
 	}
+
+	authHeader fmt.Stringer
+
+	basicAuth struct {
+		username string
+		password string
+	}
+
 	// Client is the registry schema REST API client.
 	Client struct {
 		baseURL string
-
 		// the client is created on the `NewClient` function, it can be customized via options.
-		client httpDoer
+		client     httpDoer
+		authHeader authHeader
 	}
 
 	// Option describes an optional runtime configurator that can be passed on `NewClient`.
@@ -37,6 +46,11 @@ type (
 	// Look `UsingClient`.
 	Option func(*Client)
 )
+
+func (auth *basicAuth) String() string {
+	creds := auth.username + ":" + auth.password
+	return "Basic " + base64.StdEncoding.EncodeToString([]byte(creds))
+}
 
 // UsingClient modifies the underline HTTP Client that schema registry is using for contact with the backend server.
 func UsingClient(httpClient *http.Client) Option {
@@ -143,6 +157,8 @@ const (
 	acceptEncodingHeaderKey  = "Accept-Encoding"
 	contentEncodingHeaderKey = "Content-Encoding"
 	gzipEncodingHeaderValue  = "gzip"
+
+	authorizationHeaderKey = "Authorization"
 )
 
 // ResourceError is being fired from all API calls when an error code is received.
@@ -219,6 +235,12 @@ func acquireBuffer(b []byte) *bytes.Buffer {
 const schemaAPIVersion = "v1"
 const contentTypeSchemaJSON = "application/vnd.schemaregistry." + schemaAPIVersion + "+json"
 
+// SetBasicAuth set basic auth credentials for all the Schema Registry requests
+func (c *Client) SetBasicAuth(username, password string) error {
+	c.authHeader = &basicAuth{username, password}
+	return nil
+}
+
 func (c *Client) do(method, path, contentType string, send []byte) (*http.Response, error) {
 	if path[0] == '/' {
 		path = path[1:]
@@ -234,6 +256,10 @@ func (c *Client) do(method, path, contentType string, send []byte) (*http.Respon
 	// set the content type if any.
 	if contentType != "" {
 		req.Header.Set(contentTypeHeaderKey, contentType)
+	}
+
+	if c.authHeader != nil {
+		req.Header.Add(authorizationHeaderKey, c.authHeader.String())
 	}
 
 	// response accept gziped content.
