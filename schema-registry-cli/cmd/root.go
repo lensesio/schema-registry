@@ -16,6 +16,8 @@ import (
 var (
 	cfgFile     string
 	registryURL string
+	username    string
+	password    string
 	verbose     bool
 	nocolor     bool
 )
@@ -26,11 +28,16 @@ var RootCmd = &cobra.Command{
 	Short: "A command line interface for the Confluent schema registry",
 	Long:  `A command line interface for the Confluent schema registry`,
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
+		flags := cmd.Flags()
 		if !verbose {
 			log.SetOutput(ioutil.Discard)
 		}
 		if nocolor {
 			color.NoColor = true
+		}
+		if flags.Changed("username") != flags.Changed("password") {
+			fmt.Println("[Err] Both 'username' and 'password' flags must be set to enable basic authentication")
+			os.Exit(-1)
 		}
 		log.Printf("schema registry url: %s\n", viper.Get("url"))
 	},
@@ -49,7 +56,13 @@ func init() {
 	RootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "be verbose")
 	RootCmd.PersistentFlags().BoolVarP(&nocolor, "no-color", "n", false, "dont color output")
 	RootCmd.PersistentFlags().StringVarP(&registryURL, "url", "e", schemaregistry.DefaultURL, "schema registry url, overrides SCHEMA_REGISTRY_URL")
+	RootCmd.PersistentFlags().StringVarP(&username, "username", "u", "", "schema registy basic auth username, overrides SCHEMA_REGISTRY_USERNAME")
+	RootCmd.PersistentFlags().StringVarP(&password, "password", "p", "", "schema registry basic auth password, overrides SCHEMA_REGISTRY_PASSWORD")
 	viper.SetEnvPrefix("schema_registry")
 	viper.BindPFlag("url", RootCmd.PersistentFlags().Lookup("url"))
 	viper.BindEnv("url")
+	viper.BindPFlag("username", RootCmd.PersistentFlags().Lookup("username"))
+	viper.BindEnv("username")
+	viper.BindPFlag("password", RootCmd.PersistentFlags().Lookup("password"))
+	viper.BindEnv("password")
 }

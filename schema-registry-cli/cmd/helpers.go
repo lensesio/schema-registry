@@ -90,5 +90,15 @@ func assertClient() *schemaregistry.Client {
 		fmt.Println(err)
 		os.Exit(-1)
 	}
+	username := viper.GetString("username")
+	password := viper.GetString("password")
+
+	if username != "" && password != "" {
+		err = c.SetBasicAuth(username, password)
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(-1)
+		}
+	}
 	return c
 }
