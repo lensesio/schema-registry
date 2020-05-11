@@ -28,11 +28,16 @@ var RootCmd = &cobra.Command{
 	Short: "A command line interface for the Confluent schema registry",
 	Long:  `A command line interface for the Confluent schema registry`,
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
+		flags := cmd.Flags()
 		if !verbose {
 			log.SetOutput(ioutil.Discard)
 		}
 		if nocolor {
 			color.NoColor = true
+		}
+		if flags.Changed("username") != flags.Changed("password") {
+			fmt.Println("[Err] Both 'username' and 'password' flags must be set to enable basic authentication")
+			os.Exit(-1)
 		}
 		log.Printf("schema registry url: %s\n", viper.Get("url"))
 	},
