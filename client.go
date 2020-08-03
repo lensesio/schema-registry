@@ -19,6 +19,12 @@ import (
 // DefaultURL is the address where a local schema registry listens by default.
 const DefaultURL = "http://localhost:8081"
 
+const (
+	AVRO     SchemaType = "AVRO"
+	JSON     SchemaType = "JSON"
+	PROTOBUF SchemaType = "PROTOBUF"
+)
+
 type (
 	httpDoer interface {
 		Do(req *http.Request) (resp *http.Response, err error)
@@ -30,6 +36,8 @@ type (
 		// the client is created on the `NewClient` function, it can be customized via options.
 		client httpDoer
 	}
+
+	SchemaType string
 
 	// Option describes an optional runtime configurator that can be passed on `NewClient`.
 	// Custom `Option` can be used as well, it's just a type of `func(*schemaregistry.Client)`.
@@ -444,6 +452,10 @@ type (
 	schemaOnlyJSON struct {
 		Schema string `json:"schema"`
 	}
+	schemaTypeJSON struct {
+		Schema     string     `json:"schema"`
+		SchemaType SchemaType `json:"schemaType"`
+	}
 
 	idOnlyJSON struct {
 		ID int `json:"id"`
@@ -460,8 +472,9 @@ type (
 		// Subject where the schema is registered for.
 		Subject string `json:"subject"`
 		// Version of the returned schema.
-		Version int `json:"version"`
-		ID      int `json:"id,omitempty"`
+		Version    int    `json:"version"`
+		SchemaType string `json:"schemaType"`
+		ID         int    `json:"id,omitempty"`
 	}
 
 	// Config describes a subject or globa schema-registry configuration
@@ -476,18 +489,19 @@ type (
 // this schema from the schemas resource and is different from
 // the schema’s version which is associated with that name.
 func (c *Client) RegisterNewSchema(subject string, avroSchema string) (int, error) {
+	return c.RegisterNewSchemaV2(subject, avroSchema, AVRO)
+}
+
+func (c *Client) RegisterNewSchemaV2(subject string, schema string, schemaType SchemaType) (int, error) {
 	if subject == "" {
 		return 0, errRequired("subject")
 	}
-	if avroSchema == "" {
-		return 0, errRequired("avroSchema")
+
+	if schema == "" {
+		return 0, errRequired("schema")
 	}
 
-	schema := schemaOnlyJSON{
-		Schema: avroSchema,
-	}
-
-	send, err := json.Marshal(schema)
+	send, err := json.Marshal(schemaTypeJSON{Schema: schema, SchemaType: schemaType})
 	if err != nil {
 		return 0, err
 	}
