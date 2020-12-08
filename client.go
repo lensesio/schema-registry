@@ -19,6 +19,12 @@ import (
 // DefaultURL is the address where a local schema registry listens by default.
 const DefaultURL = "http://localhost:8081"
 
+const (
+	AVRO     SchemaType = "AVRO"
+	JSON     SchemaType = "JSON"
+	PROTOBUF SchemaType = "PROTOBUF"
+)
+
 type (
 	httpDoer interface {
 		Do(req *http.Request) (resp *http.Response, err error)
@@ -30,6 +36,8 @@ type (
 		// the client is created on the `NewClient` function, it can be customized via options.
 		client httpDoer
 	}
+
+	SchemaType string
 
 	// Option describes an optional runtime configurator that can be passed on `NewClient`.
 	// Custom `Option` can be used as well, it's just a type of `func(*schemaregistry.Client)`.
@@ -445,12 +453,28 @@ type (
 		Schema string `json:"schema"`
 	}
 
+	Reference struct {
+		Name    string `json:"name"`
+		Subject string `json:"subject"`
+		Version int    `json:"version"`
+	}
+
+	schemaTypeJSON struct {
+		Schema     string      `json:"schema"`
+		SchemaType SchemaType  `json:"schemaType"`
+		References []Reference `json:"references"`
+	}
+
 	idOnlyJSON struct {
 		ID int `json:"id"`
 	}
 
 	isCompatibleJSON struct {
 		IsCompatible bool `json:"is_compatible"`
+	}
+
+	compatibility struct {
+		Compatibility string `json:"compatibility"`
 	}
 
 	// Schema describes a schema, look `GetSchema` for more.
@@ -460,8 +484,9 @@ type (
 		// Subject where the schema is registered for.
 		Subject string `json:"subject"`
 		// Version of the returned schema.
-		Version int `json:"version"`
-		ID      int `json:"id,omitempty"`
+		Version    int    `json:"version"`
+		SchemaType string `json:"schemaType"`
+		ID         int    `json:"id,omitempty"`
 	}
 
 	// Config describes a subject or globa schema-registry configuration
@@ -476,18 +501,19 @@ type (
 // this schema from the schemas resource and is different from
 // the schema’s version which is associated with that name.
 func (c *Client) RegisterNewSchema(subject string, avroSchema string) (int, error) {
+	return c.RegisterNewSchemaV2(subject, avroSchema, AVRO, []Reference{})
+}
+
+func (c *Client) RegisterNewSchemaV2(subject string, schema string, schemaType SchemaType, references []Reference) (int, error) {
 	if subject == "" {
 		return 0, errRequired("subject")
 	}
-	if avroSchema == "" {
-		return 0, errRequired("avroSchema")
+
+	if schema == "" {
+		return 0, errRequired("schema")
 	}
 
-	schema := schemaOnlyJSON{
-		Schema: avroSchema,
-	}
-
-	send, err := json.Marshal(schema)
+	send, err := json.Marshal(schemaTypeJSON{Schema: schema, SchemaType: schemaType, References: references})
 	if err != nil {
 		return 0, err
 	}
@@ -682,4 +708,27 @@ func (c *Client) IsSchemaCompatible(subject string, avroSchema string, versionID
 // IsLatestSchemaCompatible tests compatibility with the latest version of a subject's schema.
 func (c *Client) IsLatestSchemaCompatible(subject string, avroSchema string) (bool, error) {
 	return c.isSchemaCompatibleAtVersion(subject, avroSchema, SchemaLatestVersion)
+}
+
+func (c *Client) SetCompatibility(subject string, compatibleEnum string) (success bool, err error) {
+	compatibleMessage := compatibility{Compatibility: compatibleEnum}
+	send, err := json.Marshal(compatibleMessage)
+	if err != nil {
+		return false, fmt.Errorf("error constructing message: %s", err)
+	}
+
+	path := fmt.Sprintf("config/"+subjectPath, subject)
+	resp, err := c.do(http.MethodPut, path, contentTypeSchemaJSON, send)
+	if err != nil {
+		return false, fmt.Errorf("error making request: %s", err)
+	}
+
+	switch status := resp.StatusCode; status {
+	case 200:
+		return true, nil
+	case 422:
+		return false, fmt.Errorf("invalid compatibility. Should be one of NONE, FULL, FORWARD, BACKWARD")
+	default:
+		return false, fmt.Errorf("internal Server Error: %s", resp.Body)
+	}
 }
