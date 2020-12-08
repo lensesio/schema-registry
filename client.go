@@ -452,9 +452,17 @@ type (
 	schemaOnlyJSON struct {
 		Schema string `json:"schema"`
 	}
+
+	Reference struct {
+		Name    string `json:"name"`
+		Subject string `json:"subject"`
+		Version int    `json:"version"`
+	}
+
 	schemaTypeJSON struct {
-		Schema     string     `json:"schema"`
-		SchemaType SchemaType `json:"schemaType"`
+		Schema     string      `json:"schema"`
+		SchemaType SchemaType  `json:"schemaType"`
+		References []Reference `json:"references"`
 	}
 
 	idOnlyJSON struct {
@@ -463,6 +471,10 @@ type (
 
 	isCompatibleJSON struct {
 		IsCompatible bool `json:"is_compatible"`
+	}
+
+	compatibility struct {
+		Compatibility string `json:"compatibility"`
 	}
 
 	// Schema describes a schema, look `GetSchema` for more.
@@ -489,10 +501,10 @@ type (
 // this schema from the schemas resource and is different from
 // the schema’s version which is associated with that name.
 func (c *Client) RegisterNewSchema(subject string, avroSchema string) (int, error) {
-	return c.RegisterNewSchemaV2(subject, avroSchema, AVRO)
+	return c.RegisterNewSchemaV2(subject, avroSchema, AVRO, []Reference{})
 }
 
-func (c *Client) RegisterNewSchemaV2(subject string, schema string, schemaType SchemaType) (int, error) {
+func (c *Client) RegisterNewSchemaV2(subject string, schema string, schemaType SchemaType, references []Reference) (int, error) {
 	if subject == "" {
 		return 0, errRequired("subject")
 	}
@@ -501,7 +513,7 @@ func (c *Client) RegisterNewSchemaV2(subject string, schema string, schemaType S
 		return 0, errRequired("schema")
 	}
 
-	send, err := json.Marshal(schemaTypeJSON{Schema: schema, SchemaType: schemaType})
+	send, err := json.Marshal(schemaTypeJSON{Schema: schema, SchemaType: schemaType, References: references})
 	if err != nil {
 		return 0, err
 	}
@@ -696,4 +708,27 @@ func (c *Client) IsSchemaCompatible(subject string, avroSchema string, versionID
 // IsLatestSchemaCompatible tests compatibility with the latest version of a subject's schema.
 func (c *Client) IsLatestSchemaCompatible(subject string, avroSchema string) (bool, error) {
 	return c.isSchemaCompatibleAtVersion(subject, avroSchema, SchemaLatestVersion)
+}
+
+func (c *Client) SetCompatibility(subject string, compatibleEnum string) (success bool, err error) {
+	compatibleMessage := compatibility{Compatibility: compatibleEnum}
+	send, err := json.Marshal(compatibleMessage)
+	if err != nil {
+		return false, fmt.Errorf("error constructing message: %s", err)
+	}
+
+	path := fmt.Sprintf("config/"+subjectPath, subject)
+	resp, err := c.do(http.MethodPut, path, contentTypeSchemaJSON, send)
+	if err != nil {
+		return false, fmt.Errorf("error making request: %s", err)
+	}
+
+	switch status := resp.StatusCode; status {
+	case 200:
+		return true, nil
+	case 422:
+		return false, fmt.Errorf("invalid compatibility. Should be one of NONE, FULL, FORWARD, BACKWARD")
+	default:
+		return false, fmt.Errorf("internal Server Error: %s", resp.Body)
+	}
 }
